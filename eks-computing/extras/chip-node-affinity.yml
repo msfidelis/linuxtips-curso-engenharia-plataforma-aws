@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: chip
+  name: chip
+  namespace: chip
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: chip
+  template:
+    metadata:       
+      labels:
+        app: chip
+        name: chip
+        version: v1
+    spec:
+      nodeSelector:
+        capacity/arch: x86_64
+
+      # Affinity 50% SPOT and 50% ON_DEMAND
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: capacity/type
+                operator: In
+                values:
+                - SPOT
+          - weight: 50 
+            preference:
+              matchExpressions:
+              - key: capacity/type
+                operator: In
+                values:
+                - ON_DEMAND
+
+      containers:
+      - name: chip
+        image: fidelissauro/chip:v1
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi      
+        startupProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /readiness
+            port: 8080
+          periodSeconds: 10
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            httpHeaders:
+            - name: Custom-Header
+              value: Awesome
+            path: /liveness
+            port: 8080
+          periodSeconds: 10
+        env:
+        - name: CHAOS_MONKEY_ENABLED
+          value: "false"  
+        - name: CHAOS_MONKEY_MODE
+          value: "critical" 
+        - name: CHAOS_MONKEY_LATENCY
+          value: "true"            
+        - name: CHAOS_MONKEY_EXCEPTION
+          value: "true"   
+        - name: CHAOS_MONKEY_APP_KILLER
+          value: "true"   
+        - name: CHAOS_MONKEY_MEMORY
+          value: "false"                                        
+      terminationGracePeriodSeconds: 60
