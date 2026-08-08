@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chip-ingress
+  namespace: chip
+  annotations:
+    alb.ingress.kubernetes.io/scheme: "internet-facing" 
+    alb.ingress.kubernetes.io/subnets:  "subnet-00581d360b548bd1a,subnet-0732af917893165f7,subnet-0af4578c3ecfffdb3"
+    alb.ingress.kubernetes.io/target-type: "ip" # Direcionar tráfego diretamente para os Pods (ou use "instance")
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]' 
+    alb.ingress.kubernetes.io/healthcheck-path: "/liveness"
+    alb.ingress.kubernetes.io/healthcheck-port: "traffic-port" 
+    alb.ingress.kubernetes.io/healthcheck-protocol: "HTTP" 
+  labels:
+    app.kubernetes.io/name: chip
+spec:
+  ingressClassName: alb
+  rules:
+    - host: chip.msfidelis.com.br # Substitua pelo seu domínio
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: chip
+                port:
+                  number: 8080

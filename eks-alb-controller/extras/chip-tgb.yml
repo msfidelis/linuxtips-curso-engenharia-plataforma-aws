@@ -1,0 +1,11 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: chip
+  namespace: chip
+spec:
+  serviceRef:
+    name: chip
+    port: web
+  targetGroupARN: "arn:aws:elasticloadbalancing:us-east-1:181560427716:targetgroup/linuxtips-eks-http/0035a64314b1c2b0"
+  targetType: ip

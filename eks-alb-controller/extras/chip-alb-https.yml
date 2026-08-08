@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chip-ingress
+  namespace: chip
+  annotations:
+    alb.ingress.kubernetes.io/scheme: "internet-facing" 
+    alb.ingress.kubernetes.io/subnets:  "subnet-00581d360b548bd1a,subnet-0732af917893165f7,subnet-0af4578c3ecfffdb3"
+    alb.ingress.kubernetes.io/target-type: "ip" 
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]' 
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:181560427716:certificate/9051bfc0-86e7-4af3-a18d-584e40f1ef2d" 
+    alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-2016-08" 
+    alb.ingress.kubernetes.io/healthcheck-path: "/liveness"
+    alb.ingress.kubernetes.io/healthcheck-port: "traffic-port" 
+    alb.ingress.kubernetes.io/healthcheck-protocol: "HTTP" 
+  labels:
+    app.kubernetes.io/name: chip
+spec:
+  ingressClassName: alb
+  rules:
+    - host: chip.msfidelis.com.br # Substitua pelo seu domínio
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: chip
+                port:
+                  number: 8080

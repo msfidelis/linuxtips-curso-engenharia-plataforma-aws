@@ -47,12 +47,3 @@ variable "ssm_pod_subnets" {
   type        = list(string)
   description = "Lista dos ID's do SSM onde estão as subnets de pods do projeto"
 }
-
-
-variable "dns_name" {
-  default = "*.msfidelis.com.br"
-}
-
-variable "route53_hosted_zone" {
-  default = "Z102505525LUE9SZ7HWTY"
-}
