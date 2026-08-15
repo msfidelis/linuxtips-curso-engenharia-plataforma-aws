@@ -1,42 +1,47 @@
-resource "helm_release" "kong" {
-  name             = "kong"
-  repository       = "https://charts.konghq.com"
-  chart            = "kong"
-  namespace        = "kong"
+
+resource "helm_release" "traefik" {
+  name             = "traefik"
+  repository       = "https://traefik.github.io/charts"
+  chart            = "traefik"
+  namespace        = "traefik"
   create_namespace = true
 
   set = [
     {
-      name  = "ingressController.enabled"
-      value = true
-    },
-    {
-      name  = "ingressController.ingressClass"
-      value = "kong"
-    },
-    {
-      name  = "proxy.enabled"
-      value = true
-    },
-    {
-      name  = "proxy.type"
+      name  = "service.spec.type"
       value = "ClusterIP"
     },
     {
-      name  = "status.enabled"
+      name  = "ports.web.port"
+      value = 8000
+    },
+    {
+      name  = "ports.traefik.port"
+      value = 9000
+    },
+    {
+      name  = "ingressClass.enabled"
       value = true
     },
     {
-      name  = "admin.enabled"
-      value = false
+      name  = "ingressClass.name"
+      value = "traefik"
     },
     {
-      name  = "manager.enabled"
-      value = false
+      name  = "providers.kubernetesIngress.enabled"
+      value = true
     },
     {
-      name  = "portal.enabled"
-      value = false
+      name = "providers.kubernetesGateway.enabled"
+      value = true
+    },
+    {
+      name  = "gateway.enabled"
+      value = false # não usamos o Gateway auto-provisionado pelo chart; declaramos o nosso em extras/traefik/gateway-api
+    },
+    {
+      name  = "gatewayClass.enabled"
+      value = false # idem para o GatewayClass
     },
     // Resources
     {
@@ -55,25 +60,6 @@ resource "helm_release" "kong" {
       name  = "resources.limits.memory"
       value = "256Mi"
     },
-
-    // Resources - Ingress Controller
-    {
-      name  = "ingressController.resources.requests.cpu"
-      value = "100m"
-    },
-    {
-      name  = "ingressController.resources.requests.memory"
-      value = "128Mi"
-    },
-    {
-      name  = "ingressController.resources.limits.cpu"
-      value = "200m"
-    },
-    {
-      name  = "ingressController.resources.limits.memory"
-      value = "256Mi"
-    },
-
     // Autoscaling
     {
       name  = "autoscaling.enabled"
@@ -102,7 +88,7 @@ resource "helm_release" "kong" {
     {
       name  = "autoscaling.metrics[0].resource.target.averageUtilization"
       value = 50
-    }    
+    }
   ]
 
   depends_on = [
@@ -110,24 +96,22 @@ resource "helm_release" "kong" {
   ]
 }
 
-
-resource "kubectl_manifest" "kong_tgb" {
+resource "kubectl_manifest" "traefik_tgb" {
   yaml_body = <<YAML
 apiVersion: elbv2.k8s.aws/v1beta1
 kind: TargetGroupBinding
 metadata:
-  name: kong
-  namespace: kong
+  name: traefik
+  namespace: traefik
 spec:
   serviceRef:
-    name: kong-kong-proxy
+    name: traefik
     port: 80
-  targetGroupARN: ${aws_lb_target_group.kong_http.arn}
+  targetType: ip
+  targetGroupARN: ${aws_lb_target_group.traefik_http.arn}
 YAML
 
-
   depends_on = [
-    helm_release.kong,
+    helm_release.traefik,
   ]
-
 }
